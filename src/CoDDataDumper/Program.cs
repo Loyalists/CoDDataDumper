@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using PhilLibX;
 
 namespace CoDDataDumper
@@ -14,6 +15,13 @@ namespace CoDDataDumper
         /// <param name="args">Arguments</param>
         static void Main(string[] args)
         {
+            // Call Updater
+            try
+            {
+                Process.Start("CoDDataDumperUpdater.exe", "Scobalula CoDDataDumper CoDDataDumper coddatadumper.exe false");
+            }
+            catch { }
+
             // Set Console Data
             Printer.SetPrefixBackgroundColor(ConsoleColor.DarkBlue);
             Console.Title = "CoDDataDumber - 0.1.0";

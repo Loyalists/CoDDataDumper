@@ -10,7 +10,7 @@ namespace CoDDataDumper
     /// <summary>
     /// Black Ops 4 Logic
     /// </summary>
-    class BlackOps4
+    public partial class BlackOps4
     {
         /// <summary>
         /// Image Semantics
@@ -927,6 +927,9 @@ namespace CoDDataDumper
                 // Try write the attachment, if we fail, move on
                 try
                 {
+                    // Greyhound Search String
+                    string greyhoundSearchString = "";
+
                     // Dump Output
                     using (StreamWriter writer = new StreamWriter(Path.Combine("BO4\\DBAttachmentUnique", String.Format("xattachment_{0:x}.txt", data.Hash))))
                     {
@@ -953,10 +956,14 @@ namespace CoDDataDumper
                                     var position = GameLoader.Reader.ReadStruct<AttachmentLocationData>(model.PositionPointer);
                                     var rotation = GameLoader.Reader.ReadStruct<AttachmentLocationData>(model.RotationPointer);
 
+                                    // Add to search string
+                                    greyhoundSearchString += (GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+                                    greyhoundSearchString += (GameLoader.Reader.ReadUInt64(adsModelPointer + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+
                                     // Write Data
-                                    writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8));
+                                    writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF);
                                     if (adsModelPointer > 0)
-                                        writer.WriteLine("ADS Model       =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(adsModelPointer + 8));
+                                        writer.WriteLine("ADS Model       =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(adsModelPointer + 8) & 0xFFFFFFFFFFFFFFF);
                                     writer.WriteLine("Tag             =   {0}",
                                         GetString(GameLoader.Reader.ReadInt32(model.TagPointer))
                                         );
@@ -1006,8 +1013,11 @@ namespace CoDDataDumper
                                 var position = GameLoader.Reader.ReadStruct<AttachmentLocationData>(attachmentModel.PositionPointer);
                                 var rotation = GameLoader.Reader.ReadStruct<AttachmentLocationData>(attachmentModel.RotationPointer);
 
+                                // Add to search string
+                                greyhoundSearchString += (GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+
                                 // Write Data
-                                writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8));
+                                writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF);
                                 writer.WriteLine("Tag             =   {0}",
                                     GetString(GameLoader.Reader.ReadInt32(attachmentModel.TagPointer))
                                     );
@@ -1031,8 +1041,18 @@ namespace CoDDataDumper
                         var animationTable = GameLoader.Reader.ReadStruct<AnimationTable>(data.AnimationTablePointer);
                         writer.WriteLine("// xAnims");
                         for (int j = 0; j < AnimationTableCount; j++)
+                        {
                             if (animationTable.Animations[j] > 0)
-                                writer.WriteLine("xAnim {1}        =   xanim_{0:x}", GameLoader.Reader.ReadInt64(animationTable.Animations[j] + 120), j.ToString().PadRight(16));
+                            {
+                                writer.WriteLine("xAnim {1}        =   xanim_{0:x}", GameLoader.Reader.ReadInt64(animationTable.Animations[j] + 120) & 0xFFFFFFFFFFFFFFF, j.ToString().PadRight(16));
+
+                                // Add to search string
+                                greyhoundSearchString += (GameLoader.Reader.ReadUInt64(animationTable.Animations[j] + 120) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+                            }
+                        }
+
+                        // Write Search String
+                        writer.WriteLine("\n// Greyhound Search String\n{0}", greyhoundSearchString);
 
                         // Increment
                         attachmentsExported++;
@@ -1080,16 +1100,24 @@ namespace CoDDataDumper
                     // Check do we have the display hash (I haven't see this return false)
                     if (LocalizedStrings.TryGetValue(weaponAsset.DisplayNameHash, out string displayName))
                     {
+                        // Greyhound Search String
+                        string greyhoundSearchString = "";
+
+                        // Open Writer
                         using (StreamWriter writer = new StreamWriter(Path.Combine("BO4\\DBWeapons", String.Format("{0}_{1:x}.txt", displayName, weaponAsset.Hash))))
                         {
                             // Read Model Pointers
                             long viewmodelPtr = GameLoader.Reader.ReadInt64(weaponAsset.ViewmodelPointer);
                             long worldmodelPtr = GameLoader.Reader.ReadInt64(weaponAsset.WorldmodelPointer);
 
+                            // Add to search string
+                            greyhoundSearchString += (GameLoader.Reader.ReadUInt64(viewmodelPtr + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+                            greyhoundSearchString += (GameLoader.Reader.ReadUInt64(worldmodelPtr + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+
                             // Dump 'em
                             writer.WriteLine("// XModels");
-                            writer.WriteLine("Viewmodel                 =   xmodel_{0:x}", viewmodelPtr > 0 ? GameLoader.Reader.ReadUInt64(viewmodelPtr + 8) : 0);
-                            writer.WriteLine("Worldmodel                =   xmodel_{0:x}\n", worldmodelPtr > 0 ? GameLoader.Reader.ReadUInt64(worldmodelPtr + 8) : 0);
+                            writer.WriteLine("Viewmodel                 =   xmodel_{0:x}", viewmodelPtr > 0 ? GameLoader.Reader.ReadUInt64(viewmodelPtr + 8) & 0xFFFFFFFFFFFFFFF : 0);
+                            writer.WriteLine("Worldmodel                =   xmodel_{0:x}\n", worldmodelPtr > 0 ? GameLoader.Reader.ReadUInt64(worldmodelPtr + 8) & 0xFFFFFFFFFFFFFFF : 0);
 
                             // Read Hide Tags (32 Max)
                             var hideTags = GameLoader.Reader.ReadStruct<HideTagTable>(weaponAsset.HideTagsPointer);
@@ -1120,8 +1148,11 @@ namespace CoDDataDumper
                                     var position = GameLoader.Reader.ReadStruct<AttachmentLocationData>(attachmentModel.PositionPointer);
                                     var rotation = GameLoader.Reader.ReadStruct<AttachmentLocationData>(attachmentModel.RotationPointer);
 
+                                    // Add to search string
+                                    greyhoundSearchString += (GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+
                                     // Write Data
-                                    writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8));
+                                    writer.WriteLine("Model           =   xmodel_{0:x}", GameLoader.Reader.ReadUInt64(modelPointer + 8) & 0xFFFFFFFFFFFFFFF);
                                     writer.WriteLine("Tag             =   {0}",
                                         GetString(GameLoader.Reader.ReadInt32(attachmentModel.TagPointer))
                                         );
@@ -1145,8 +1176,15 @@ namespace CoDDataDumper
                             var animationTable = GameLoader.Reader.ReadStruct<AnimationTable>(weaponAsset.AnimationTablePointer);
                             writer.WriteLine("// xAnims");
                             for (int j = 0; j < AnimationTableCount; j++)
+                            {
                                 if (animationTable.Animations[j] > 0)
-                                    writer.WriteLine("xAnim {1}        =   xanim_{0:x}", GameLoader.Reader.ReadInt64(animationTable.Animations[j] + 120), GetAnimationUsage(j).PadRight(32));
+                                {
+                                    writer.WriteLine("xAnim {1}        =   xanim_{0:x}", GameLoader.Reader.ReadInt64(animationTable.Animations[j] + 120) & 0xFFFFFFFFFFFFFFF, GetAnimationUsage(j).PadRight(32));
+
+                                    // Add to 
+                                    greyhoundSearchString += (GameLoader.Reader.ReadInt64(animationTable.Animations[j] + 120) & 0xFFFFFFFFFFFFFFF).ToString("x") + ",";
+                                }
+                            }
 
                             // Write Spacer
                             writer.WriteLine();
@@ -1156,7 +1194,7 @@ namespace CoDDataDumper
                             writer.WriteLine("// Attachments");
                             for (int j = 0; j < AttachmentTableCount; j++)
                                 if (attachmentTable.Attachment[j] > 0)
-                                    writer.WriteLine("Attachment {1}        =   {0:x}", GameLoader.Reader.ReadInt64(attachmentTable.Attachment[j] + 8), j.ToString().PadRight(16));
+                                    writer.WriteLine("Attachment {1}        =   {0:x}", GameLoader.Reader.ReadInt64(attachmentTable.Attachment[j] + 8) & 0xFFFFFFFFFFFFFFF, j.ToString().PadRight(16));
 
                             // Write Spacer
                             writer.WriteLine();
@@ -1166,8 +1204,11 @@ namespace CoDDataDumper
                             for (int j = 0; j < SoundAliasCount; j++)
                             {
                                 if (weaponAsset.SoundAliasHashes[j] > 0)
-                                    writer.WriteLine("Sound Alias {1}  =   {0:x}", weaponAsset.SoundAliasHashes[j], j.ToString().PadRight(16));
+                                    writer.WriteLine("Sound Alias {1}  =   {0:x}", weaponAsset.SoundAliasHashes[j] & 0xFFFFFFFFFFFFFFF, j.ToString().PadRight(16));
                             }
+
+                            // Write Search String
+                            writer.WriteLine("\n// Greyhound Search String\n{0}", greyhoundSearchString);
 
                             // Increment
                             weaponsExported++;
@@ -1234,11 +1275,11 @@ namespace CoDDataDumper
 
                                 // Write String Data
                                 writer.WriteLine("{0:x},{1:x},{2:x},{3:x},{4:x}",
-                                    BitConverter.ToUInt64(soundAliasBuffer, 8),
-                                    BitConverter.ToUInt64(soundAliasBuffer, 40),
-                                    BitConverter.ToUInt64(soundAliasBuffer, 80),
-                                    BitConverter.ToUInt64(soundAliasBuffer, 96),
-                                    BitConverter.ToUInt64(soundAliasBuffer, 112)
+                                    BitConverter.ToUInt64(soundAliasBuffer, 8) & 0xFFFFFFFFFFFFFFF,
+                                    BitConverter.ToUInt64(soundAliasBuffer, 40) & 0xFFFFFFFFFFFFFFF,
+                                    BitConverter.ToUInt64(soundAliasBuffer, 80) & 0xFFFFFFFFFFFFFFF,
+                                    BitConverter.ToUInt64(soundAliasBuffer, 96) & 0xFFFFFFFFFFFFFFF,
+                                    BitConverter.ToUInt64(soundAliasBuffer, 112) & 0xFFFFFFFFFFFFFFF
                                     );
                             }
                         }

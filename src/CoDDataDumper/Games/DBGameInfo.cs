@@ -9,7 +9,7 @@ namespace CoDDataDumper
     /// <summary>
     /// Game DB Data
     /// </summary>
-    struct DBGameInfo
+    public struct DBGameInfo
     {
         /// <summary>
         /// Pointer to the Asset Pools
